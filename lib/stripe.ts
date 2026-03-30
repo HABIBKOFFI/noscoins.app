@@ -1,15 +1,13 @@
 import Stripe from "stripe";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY manquant");
-}
+export const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2026-03-25.dahlia",
+      typescript: true,
+    })
+  : null;
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2026-03-25.dahlia",
-  typescript: true,
-});
-
-export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
+export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
 
 /**
  * Crée une session de paiement Stripe Connect.
@@ -28,8 +26,9 @@ export async function createPaymentIntent({
   connectedAccountId: string;
   applicationFeeAmount: number;
 }) {
+  if (!stripe) throw new Error("STRIPE_SECRET_KEY manquant");
   return stripe.paymentIntents.create({
-    amount: Math.round(amount * 100), // centimes
+    amount: Math.round(amount * 100),
     currency: currency.toLowerCase(),
     application_fee_amount: Math.round(applicationFeeAmount * 100),
     transfer_data: { destination: connectedAccountId },
@@ -41,5 +40,6 @@ export async function createPaymentIntent({
  * Vérifie la signature d'un webhook Stripe.
  */
 export function constructStripeEvent(payload: string, sig: string) {
+  if (!stripe) throw new Error("STRIPE_SECRET_KEY manquant");
   return stripe.webhooks.constructEvent(payload, sig, STRIPE_WEBHOOK_SECRET);
 }
