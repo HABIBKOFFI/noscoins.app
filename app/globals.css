@@ -1,0 +1,198 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Inter:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+/* ── Palette Noscoins ─────────────────────────────────── */
+:root {
+  --terracotta: #C4622D;
+  --terracotta-dark: #a84f24;
+  --terracotta-light: #d97a4a;
+  --or: #E8A838;
+  --nuit: #1A1410;
+  --ivoire: #FBF5F0;
+  --ivoire-dark: #f0e8e0;
+
+  --background: var(--ivoire);
+  --foreground: var(--nuit);
+}
+
+/* ── Typographie ─────────────────────────────────────── */
+@theme inline {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-dark: var(--terracotta-dark);
+  --color-terracotta-light: var(--terracotta-light);
+  --color-or: var(--or);
+  --color-nuit: var(--nuit);
+  --color-ivoire: var(--ivoire);
+  --color-ivoire-dark: var(--ivoire-dark);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+/* ── Base ────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--ivoire);
+  color: var(--nuit);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Titres : Playfair Display ───────────────────────── */
+h1, h2, h3 {
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+/* ── Utilitaires Noscoins ────────────────────────────── */
+.font-serif   { font-family: "Playfair Display", Georgia, serif; }
+.font-sans    { font-family: "Inter", system-ui, sans-serif; }
+
+.text-terracotta { color: var(--terracotta); }
+.bg-terracotta   { background-color: var(--terracotta); }
+.border-terracotta { border-color: var(--terracotta); }
+
+.text-or  { color: var(--or); }
+.bg-or    { background-color: var(--or); }
+
+.text-nuit { color: var(--nuit); }
+.bg-nuit   { background-color: var(--nuit); }
+
+.text-ivoire { color: var(--ivoire); }
+.bg-ivoire   { background-color: var(--ivoire); }
+
+/* ── Bouton primaire ─────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  background-color: var(--terracotta);
+  color: white;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 0.5rem;
+  border: 2px solid var(--terracotta);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  min-height: 44px;
+  text-decoration: none;
+}
+.btn-primary:hover {
+  background-color: var(--terracotta-dark);
+  border-color: var(--terracotta-dark);
+}
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Bouton secondaire ───────────────────────────────── */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  background-color: transparent;
+  color: var(--terracotta);
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 0.5rem;
+  border: 2px solid var(--terracotta);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  min-height: 44px;
+  text-decoration: none;
+}
+.btn-secondary:hover { background-color: rgba(196, 98, 45, 0.07); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Bouton ghost ────────────────────────────────────── */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  background-color: transparent;
+  color: var(--nuit);
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  border-radius: 0.5rem;
+  border: 1.5px solid #d1c7bf;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+  min-height: 44px;
+  text-decoration: none;
+}
+.btn-ghost:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+/* ── Tags / Badges ───────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: "Inter", system-ui, sans-serif;
+}
+.badge-default  { background: var(--ivoire-dark); color: var(--nuit); }
+.badge-active   { background: var(--terracotta); color: white; }
+.badge-or       { background: var(--or); color: var(--nuit); }
+.badge-success  { background: #d1fae5; color: #065f46; }
+.badge-warning  { background: #fef3c7; color: #92400e; }
+.badge-error    { background: #fee2e2; color: #991b1b; }
+
+/* ── Carte espace ────────────────────────────────────── */
+.venue-card {
+  background: white;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid #ede7e0;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  text-decoration: none;
+  display: block;
+}
+.venue-card:hover {
+  box-shadow: 0 8px 24px rgba(26, 20, 16, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ── Inputs ─────────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem; /* évite le zoom iOS */
+  font-family: "Inter", system-ui, sans-serif;
+  border: 1.5px solid #d1c7bf;
+  border-radius: 0.5rem;
+  background: white;
+  color: var(--nuit);
+  transition: border-color 0.15s ease;
+  min-height: 44px;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px rgba(196, 98, 45, 0.15);
+}
+
+/* ── Pattern de marque (cercles terracotta) ──────────── */
+.brand-pattern {
+  background-image: radial-gradient(circle, rgba(196, 98, 45, 0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Filigrane croisillon (lignes très fines) ─────────── */
+.filigree-grid {
+  background-image:
+    linear-gradient(rgba(196, 98, 45, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 98, 45, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+}

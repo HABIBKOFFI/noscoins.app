@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "app/api/webhooks/stripe/route": { "maxDuration": 30 },
+    "app/api/webhooks/paydunya/route": { "maxDuration": 30 },
+    "app/api/webhooks/qstash/route": { "maxDuration": 30 },
+    "app/api/payments/route": { "maxDuration": 30 },
+    "app/api/notifications/stream/route": { "maxDuration": 60 }
+  }
+}
