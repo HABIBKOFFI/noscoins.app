@@ -5,6 +5,7 @@ const NAV = [
   { href: "/client/bookings", label: "Mes réservations" },
   { href: "/client/favorites", label: "Favoris" },
   { href: "/client/messages", label: "Messages" },
+  { href: "/client/notifications", label: "Notifications" },
   { href: "/client/profile", label: "Profil" },
 ];
 
