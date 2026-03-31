@@ -1,3 +1,6 @@
+// Ne jamais prerender au build — la page requiert la DB au runtime
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import Header from "@/components/layout/Header";
