@@ -1,33 +1,38 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-// Fallback no-op si Redis non configuré (dev local sans .env)
-function makeRatelimit(requests: number, window: `${number} ${"s" | "m" | "h" | "d"}`) {
+type Window = `${number} ${"s" | "m" | "h" | "d"}`;
+
+// Lazy — instancié uniquement si Redis est configuré
+function makeRatelimit(requests: number, window: Window): Ratelimit | null {
+  const url   = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null; // dev sans Redis = pas de limite
   try {
-    const redis = Redis.fromEnv();
     return new Ratelimit({
-      redis,
+      redis: new Redis({ url, token }),
       limiter: Ratelimit.slidingWindow(requests, window),
       analytics: false,
     });
   } catch {
-    // En dev sans Upstash configuré : toujours autoriser
     return null;
   }
 }
 
-export const authRatelimit    = makeRatelimit(5,  "15 m"); // 5 tentatives / 15 min
-export const apiRatelimit     = makeRatelimit(60, "1 m");  // 60 req / min
-export const quotesRatelimit  = makeRatelimit(10, "1 h");  // 10 devis / heure
+// Instances créées au premier import (build-safe car makeRatelimit gère l'absence de vars)
+export const authRatelimit   = makeRatelimit(5,  "15 m");
+export const apiRatelimit    = makeRatelimit(60, "1 m");
+export const quotesRatelimit = makeRatelimit(10, "1 h");
 
 /**
- * Vérifie la limite de taux. Retourne true si la requête doit être bloquée.
+ * Retourne true si la requête doit être bloquée (limite atteinte).
+ * Retourne false si Redis non configuré (mode dégradé silencieux).
  */
 export async function isRateLimited(
-  limiter: ReturnType<typeof makeRatelimit>,
+  limiter: Ratelimit | null,
   identifier: string
 ): Promise<boolean> {
-  if (!limiter) return false; // pas de Redis = pas de limite (dev)
+  if (!limiter) return false;
   const { success } = await limiter.limit(identifier);
   return !success;
 }

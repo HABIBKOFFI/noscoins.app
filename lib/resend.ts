@@ -1,12 +1,16 @@
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("RESEND_API_KEY manquant");
-}
-
-export const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM = process.env.EMAIL_FROM ?? "noreply@noscoins.app";
+
+function getResend(): Resend {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    console.warn("[resend] RESEND_API_KEY manquant — emails désactivés");
+    // Retourne un objet factice silencieux pour ne pas crasher le serveur
+    return { emails: { send: async () => ({ id: "noop" }) } } as unknown as Resend;
+  }
+  return new Resend(key);
+}
 
 /** Confirmation de réservation */
 export async function sendBookingConfirmed(to: string, data: {
@@ -17,7 +21,7 @@ export async function sendBookingConfirmed(to: string, data: {
   currency: string;
   bookingId: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: `Réservation confirmée — ${data.venueName}`,
@@ -39,7 +43,7 @@ export async function sendPaymentReceived(to: string, data: {
   currency: string;
   bookingId: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: `Paiement reçu — ${data.amount} ${data.currency}`,
@@ -61,7 +65,7 @@ export async function sendNewQuote(to: string, data: {
   eventDate: string;
   quoteId: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: `Nouvelle demande de devis — ${data.venueName}`,
@@ -81,7 +85,7 @@ export async function sendVenueValidated(to: string, data: {
   ownerName: string;
   venueName: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: `Votre espace "${data.venueName}" est validé !`,
@@ -100,7 +104,7 @@ export async function sendAccountSuspended(to: string, data: {
   reason: string;
   until?: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: "Votre compte Noscoins a été suspendu",
@@ -120,7 +124,7 @@ export async function sendLockExpired(to: string, data: {
   clientName: string;
   venueName: string;
 }) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM,
     to,
     subject: `Votre réservation de "${data.venueName}" a expiré`,
