@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createError, ErrorCode } from "@/lib/errors";
+import { verifyToken } from "@/lib/auth";
 import { createPaymentIntent } from "@/lib/stripe";
 import { initiatePaydunyaPayment, checkPaydunyaLimit } from "@/lib/paydunya";
 import { enqueue } from "@/lib/qstash";
@@ -26,9 +27,19 @@ const IPN_URL = `${APP_URL}/api/webhooks/paydunya`;
  * Initie un paiement (acompte 30%) pour une réservation lockée.
  */
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id");
+  // Auth : header (middleware) ou cookie (appel direct)
+  let userId = req.headers.get("x-user-id");
   if (!userId) {
-    return NextResponse.json(createError(ErrorCode.UNAUTHORIZED, "Non authentifié"), { status: 401 });
+    const token = req.cookies.get("access_token")?.value;
+    if (!token) {
+      return NextResponse.json(createError(ErrorCode.UNAUTHORIZED, "Non authentifié"), { status: 401 });
+    }
+    try {
+      const p = await verifyToken(token);
+      userId = p.userId;
+    } catch {
+      return NextResponse.json(createError(ErrorCode.UNAUTHORIZED, "Non authentifié"), { status: 401 });
+    }
   }
 
   const body = await req.json().catch(() => null);
@@ -84,15 +95,22 @@ export async function POST(req: NextRequest) {
   const commissionConfig = await prisma.config.findUnique({
     where: { key: isCI ? "commission_rate_ci" : "commission_rate_eu" },
   });
-  const baseRate = parseFloat(commissionConfig?.value ?? "0.12");
+  // Valider que le taux est un nombre dans [0, 1]
+  const rawRate = parseFloat(commissionConfig?.value ?? "0.12");
+  const baseRate = isFinite(rawRate) && rawRate >= 0 && rawRate <= 1 ? rawRate : 0.12;
 
-  // Commission override promo
+  // Commission override promo — valider aussi la valeur override
   const now = new Date();
+  const rawOverride = Number(booking.venue.commission_override);
+  const safeOverride = isFinite(rawOverride) && rawOverride >= 0 && rawOverride <= 1
+    ? rawOverride
+    : baseRate;
+
   const commissionRate =
     booking.venue.commission_override !== null &&
     booking.venue.commission_override_until &&
     booking.venue.commission_override_until > now
-      ? Number(booking.venue.commission_override)
+      ? safeOverride
       : baseRate;
 
   // Frais de service
@@ -216,10 +234,10 @@ export async function POST(req: NextRequest) {
         currency:    "XOF",
       });
     }
-  } catch (err: any) {
-    console.error("[payments] Erreur initiation paiement:", err);
+  } catch (err) {
+    console.error("[payments] error:", err instanceof Error ? err.message : "unknown");
     return NextResponse.json(
-      createError(ErrorCode.PAYMENT_FAILED, err.message ?? "Erreur lors de l'initiation du paiement"),
+      createError(ErrorCode.PAYMENT_FAILED, "Erreur lors de l'initiation du paiement"),
       { status: 500 }
     );
   }

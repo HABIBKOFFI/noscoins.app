@@ -22,7 +22,11 @@ export async function POST(req: NextRequest) {
       include: { user: true },
     });
 
-    if (!session || session.expires_at < new Date()) {
+    if (!session) return Errors.UNAUTHORIZED();
+
+    // Supprimer la session expirée proprement
+    if (session.expires_at < new Date()) {
+      await prisma.userSession.delete({ where: { id: session.id } }).catch(() => {});
       return Errors.UNAUTHORIZED();
     }
 
@@ -64,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     return res;
   } catch (err) {
-    console.error("[refresh]", err);
+    console.error("[refresh] error:", err instanceof Error ? err.message : "unknown");
     return Errors.INTERNAL();
   }
 }

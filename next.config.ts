@@ -12,10 +12,16 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-XSS-Protection", value: "1; mode=block" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Content-Type-Options",  value: "nosniff" },
+          { key: "X-Frame-Options",         value: "DENY" },
+          { key: "X-XSS-Protection",        value: "1; mode=block" },
+          { key: "Referrer-Policy",         value: "strict-origin-when-cross-origin" },
+          // HSTS : force HTTPS 1 an, incluant les sous-domaines
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+          // Désactiver les fonctionnalités sensibles non utilisées
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(self)" },
+          // Empêcher l'inférence de type MIME
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
         ],
       },
     ];

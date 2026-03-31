@@ -92,25 +92,32 @@ export async function cleanupExpiredLocks(): Promise<number> {
     },
   });
 
-  for (const slot of expired) {
-    if (!slot.locked_booking_id) continue;
+  if (expired.length === 0) return 0;
 
-    await prisma.booking.update({
-      where: { id: slot.locked_booking_id },
-      data: { status: "cancelled" },
-    });
+  // Transaction atomique : annuler bookings + libérer slots en une seule opération
+  await prisma.$transaction([
+    // Annuler tous les bookings expirés
+    ...expired
+      .filter((s) => s.locked_booking_id !== null)
+      .map((s) =>
+        prisma.booking.updateMany({
+          where: { id: s.locked_booking_id!, status: { in: ["locked", "draft"] } },
+          data: { status: "cancelled" },
+        })
+      ),
+    // Libérer tous les slots
+    ...expired.map((s) =>
+      prisma.availability.update({
+        where: { id: s.id },
+        data: {
+          locked_until: null,
+          locked_by_user_id: null,
+          locked_booking_id: null,
+        },
+      })
+    ),
+  ]);
 
-    await prisma.availability.update({
-      where: { id: slot.id },
-      data: {
-        locked_until: null,
-        locked_by_user_id: null,
-        locked_booking_id: null,
-      },
-    });
-
-    // Redis TTL already handled expiry — no need to del
-  }
-
+  // Redis TTL already handled expiry — no need to del
   return expired.length;
 }

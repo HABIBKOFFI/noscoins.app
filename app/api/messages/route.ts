@@ -14,12 +14,16 @@ async function resolveUser(req: NextRequest): Promise<{ userId: string; userRole
   catch { return null; }
 }
 
+const CLOUDINARY_HOST = "res.cloudinary.com";
+
 const sendSchema = z.object({
-  booking_id: z.string().uuid(),
-  content: z.string().max(4000).optional(),
-  // receiver_id is auto-detected from the booking
-  receiver_id: z.string().uuid().optional(),
-  attachment_url: z.string().url().optional(),
+  booking_id:      z.string().uuid(),
+  content:         z.string().max(4000).optional(),
+  receiver_id:     z.string().uuid().optional(), // auto-détecté, ignoré
+  attachment_url:  z.string().url().refine((url) => {
+    try { return new URL(url).hostname === CLOUDINARY_HOST; }
+    catch { return false; }
+  }, "Seules les pièces jointes Cloudinary sont autorisées").optional(),
   attachment_type: z.enum(["image", "pdf", "document"]).optional(),
 });
 

@@ -62,13 +62,23 @@ export async function POST(req: NextRequest) {
 
   let selectedOptionalServices: Awaited<ReturnType<typeof prisma.service.findMany>> = [];
   if (serviceIds.length > 0) {
+    // Déduplication
+    const uniqueServiceIds = [...new Set(serviceIds)];
+
     selectedOptionalServices = await prisma.service.findMany({
       where: {
-        id: { in: serviceIds },
-        venue_id: slot.venue_id,
+        id: { in: uniqueServiceIds },
+        venue_id: slot.venue_id, // Services MUST belong to this venue
         type: "optional",
       },
     });
+
+    // Vérifier que tous les IDs fournis existent et appartiennent bien à ce venue
+    if (selectedOptionalServices.length !== uniqueServiceIds.length) {
+      return Errors.VALIDATION_ERROR({
+        serviceIds: ["Un ou plusieurs services sont invalides ou n'appartiennent pas à cet espace."],
+      });
+    }
   }
 
   const allServices = [...mandatoryServices, ...selectedOptionalServices];

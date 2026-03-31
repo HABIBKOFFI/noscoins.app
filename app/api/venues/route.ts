@@ -25,20 +25,43 @@ const createVenueSchema = z.object({
 // GET /api/venues — public list of published venues
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-  const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
+  const page  = Math.max(1, parseInt(searchParams.get("page")  ?? "1")  || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20") || 20));
   const city = searchParams.get("city");
-  const lat = searchParams.get("lat");
-  const lng = searchParams.get("lng");
+  const lat  = searchParams.get("lat");
+  const lng  = searchParams.get("lng");
   const radius = searchParams.get("radius"); // km
 
-  // Geolocation search
-  if (lat && lng) {
-    const results = await searchVenuesByLocation(
-      parseFloat(lat),
-      parseFloat(lng),
-      (parseFloat(radius ?? "50")) * 1000
-    );
+  // ── Validation coordonnées ──
+  if (lat || lng) {
+    if (!lat || !lng) {
+      return NextResponse.json(
+        { error: { code: "VALIDATION_ERROR", message: "lat et lng sont requis ensemble" } },
+        { status: 400 }
+      );
+    }
+    const latN = parseFloat(lat);
+    const lngN = parseFloat(lng);
+    const radN = parseFloat(radius ?? "50");
+    if (!isFinite(latN) || !isFinite(lngN) || !isFinite(radN)) {
+      return NextResponse.json(
+        { error: { code: "VALIDATION_ERROR", message: "Coordonnées invalides" } },
+        { status: 400 }
+      );
+    }
+    if (latN < -90 || latN > 90 || lngN < -180 || lngN > 180) {
+      return NextResponse.json(
+        { error: { code: "VALIDATION_ERROR", message: "Coordonnées hors limites" } },
+        { status: 400 }
+      );
+    }
+    if (radN < 0 || radN > 50000) {
+      return NextResponse.json(
+        { error: { code: "VALIDATION_ERROR", message: "Rayon entre 0 et 50 000 km" } },
+        { status: 400 }
+      );
+    }
+    const results = await searchVenuesByLocation(latN, lngN, radN * 1000);
     return NextResponse.json({ data: results, total: results.length });
   }
 

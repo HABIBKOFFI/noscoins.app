@@ -28,5 +28,8 @@ export async function signRefreshToken(userId: string): Promise<string> {
 
 export async function verifyToken(token: string): Promise<AccessTokenPayload> {
   const { payload } = await jwtVerify(token, secret);
-  return payload as unknown as AccessTokenPayload;
+  if (typeof payload.userId !== "string" || typeof payload.role !== "string") {
+    throw new Error("Invalid token payload");
+  }
+  return { userId: payload.userId, role: payload.role };
 }

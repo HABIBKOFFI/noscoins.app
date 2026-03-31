@@ -14,8 +14,10 @@ export async function enqueue(
   payload: Record<string, unknown>,
   delaySeconds = 0
 ) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://noscoins.app";
+  const webhookUrl = `${appUrl}/api/webhooks/qstash` as string;
   await qstash.publishJSON({
-    url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/qstash`,
+    url: webhookUrl as never,
     body: { job, payload },
     ...(delaySeconds > 0 ? { delay: delaySeconds } : {}),
   });

@@ -4,18 +4,30 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signAccessToken, signRefreshToken } from "@/lib/auth";
 import { Errors } from "@/lib/errors";
-import { UserType } from "@prisma/client";
+import { authRatelimit, isRateLimited } from "@/lib/ratelimit";
 
+// `type` limité à client | owner uniquement — admin impossible via API publique
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  phone: z.string().optional(),
+  email:        z.string().email(),
+  password:     z.string().min(8),
+  phone:        z.string().optional(),
   country_code: z.string().length(2).optional(),
-  type: z.nativeEnum(UserType).default("client"),
+  type:         z.enum(["client", "owner"]).default("client"),
 });
+
+const SECURE = process.env.NODE_ENV === "production";
 
 export async function POST(req: NextRequest) {
   try {
+    // ── Rate limiting : 5 inscriptions / 15 min par IP ──
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+    if (await isRateLimited(authRatelimit, `register:${ip}`)) {
+      return NextResponse.json(
+        { error: { code: "RATE_LIMITED", message: "Trop de tentatives. Réessayez dans 15 minutes." } },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
@@ -34,12 +46,12 @@ export async function POST(req: NextRequest) {
       data: { email, password_hash, phone, country_code, type },
     });
 
-    const accessToken = await signAccessToken(user.id, user.type);
+    const accessToken  = await signAccessToken(user.id, user.type);
     const refreshToken = await signRefreshToken(user.id);
 
     await prisma.userSession.create({
       data: {
-        user_id: user.id,
+        user_id:    user.id,
         refresh_token: refreshToken,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
@@ -52,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     res.cookies.set("access_token", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: SECURE,
       sameSite: "strict",
       maxAge: 15 * 60,
       path: "/",
@@ -60,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     res.cookies.set("refresh_token", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: SECURE,
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60,
       path: "/api/auth/refresh",
@@ -68,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     return res;
   } catch (err) {
-    console.error("[register]", err);
+    console.error("[register] error:", err instanceof Error ? err.message : "unknown");
     return Errors.INTERNAL();
   }
 }
